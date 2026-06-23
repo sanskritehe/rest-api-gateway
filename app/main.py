@@ -1,6 +1,10 @@
 from fastapi import FastAPI
-from app.routes import appointments
+from app.routes.appointments import router as appointments_router
 
-app = FastAPI(title="REST API Gateway")
+app = FastAPI(title="Appointment Database Service")
 
-app.include_router(appointments.router)
+app.include_router(appointments_router)
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Appointment Database Service"}
