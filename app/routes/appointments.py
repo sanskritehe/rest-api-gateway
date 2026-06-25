@@ -1,99 +1,95 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Path, Depends
+from typing import List
+from app.models import AppointmentResponse
 from app.graphql_client import run_query
 
-router = APIRouter(prefix="/appointments", tags=["Appointments"])
+router = APIRouter(prefix="/appointments", tags=["Appointment"])
 
+def get_list_service():
+    import app.services.booking_service as booking_service
+    return booking_service.list_appointments
 
-class CreateAppointmentRequest(BaseModel):
-    user: str
-    time: str
+def get_delete_service():
+    import app.services.booking_service as booking_service
+    return booking_service.delete_appointment_service
 
+@router.get("/", response_model=List[AppointmentResponse])
+def get_appointments(list_service=Depends(get_list_service)):
+    try:
+        appointments = list_service()
+        return appointments
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve appointments: {str(e)}")
 
-class UpdateAppointmentRequest(BaseModel):
-    time: str
+@router.get("/{appointment_id}", response_model=AppointmentResponse)
+def get_appointment(
+    appointment_id: int = Path(..., title="The ID of the appointment to fetch", gt=0)
+):
+    """
+    GET /appointments/{appointment_id}
+    Fetches an appointment by ID using the GraphQL Datagraph.
 
+    Path Parameters:
+    - appointment_id (int): Positive integer representing the appointment ID.
 
-@router.get("/")
-def get_appointments():
-    data = run_query("""
-        query {
-            appointments {
-                id
-                user
-                time
-                status
-            }
+    Responses:
+    - 200: Successful retrieval.
+    - 404: Appointment not found.
+    - 500: Internal server error.
+    """
+    query = """
+    query GetAppointment($id: Int!) {
+        appointment(id: $id) {
+            id
+            user
+            time
+            status
         }
-    """)
-    return data["appointments"]
+    }
+    """
+    try:
+        res = run_query(query, {"id": appointment_id})
+        if "errors" in res and res["errors"]:
+            error_msg = res["errors"][0].get("message", "")
+            if "not found" in error_msg.lower():
+                raise HTTPException(status_code=404, detail="Appointment not found")
+            raise HTTPException(status_code=500, detail=error_msg)
+        
+        data = res.get("data")
+        if not data or not data.get("appointment"):
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        
+        return data["appointment"]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve appointment: {str(e)}")
 
+@router.delete("/{appointment_id}", status_code=204)
+def delete_appointment(
+    appointment_id: int = Path(..., title="The ID of the appointment to delete", gt=0),
+    delete_service=Depends(get_delete_service),
+):
+    """
+    DELETE /appointments/{appointment_id}
+    Performs a hard delete of an appointment by ID.
 
-@router.get("/{appointment_id}")
-def get_appointment(appointment_id: int):
-    data = run_query(
-        """
-        query GetAppointment($id: Int!) {
-            appointment(id: $id) {
-                id
-                user
-                time
-                status
-            }
-        }
-        """,
-        variables={"id": appointment_id},
-    )
-    result = data["appointment"]
-    if result is None:
-        raise HTTPException(status_code=404, detail="Appointment not found")
-    return result
+    Path Parameters:
+    - appointment_id (int): Positive integer representing the appointment ID.
 
-
-@router.post("/")
-def create_appointment(req: CreateAppointmentRequest):
-    data = run_query(
-        """
-        mutation CreateAppointment($user: String!, $time: String!) {
-            createAppointment(input: { user: $user, time: $time }) {
-                id
-                user
-                time
-                status
-            }
-        }
-        """,
-        variables={"user": req.user, "time": req.time},
-    )
-    return data["createAppointment"]
-
-
-@router.put("/{appointment_id}")
-def update_appointment(appointment_id: int, req: UpdateAppointmentRequest):
-    data = run_query(
-        """
-        mutation UpdateAppointment($id: Int!, $time: String!) {
-            updateAppointment(id: $id, input: { time: $time }) {
-                id
-                user
-                time
-                status
-            }
-        }
-        """,
-        variables={"id": appointment_id, "time": req.time},
-    )
-    return data["updateAppointment"]
-
-
-@router.delete("/{appointment_id}")
-def cancel_appointment(appointment_id: int):
-    data = run_query(
-        """
-        mutation CancelAppointment($id: Int!) {
-            cancelAppointment(id: $id)
-        }
-        """,
-        variables={"id": appointment_id},
-    )
-    return {"cancelled": data["cancelAppointment"]}
+    Responses:
+    - 204: No Content on successful deletion.
+    - 404: Appointment not found.
+    - 500: Internal server error.
+    """
+    try:
+        deleted = delete_service(appointment_id)
+        if not deleted:
+            raise HTTPException(
+                status_code=404,
+                detail={"message": "Appointment not found", "code": "not_found"},
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete appointment: {str(e)}")
