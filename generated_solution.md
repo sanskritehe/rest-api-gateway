@@ -1,3 +1,5 @@
+### FILE: app/routes/appointments.py
+```python
 from fastapi import APIRouter, HTTPException, Path
 from app.models import AppointmentResponse
 from app.services.booking_service import get_appointment_by_id
@@ -26,3 +28,5 @@ def read_appointment(
         raise HTTPException(status_code=404, detail="Appointment not found")
 
     return AppointmentResponse(**appointment)
+
+```
