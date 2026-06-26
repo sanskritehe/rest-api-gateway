@@ -1,3 +1,5 @@
+### FILE: app/routes/appointments.py
+```python
 from fastapi import APIRouter, HTTPException, Path
 from app.models import AppointmentResponse, AppointmentUpdate
 from app.db_client import update_appointment_data
@@ -75,3 +77,4 @@ def update_appointment(
     )
 
     return AppointmentResponse(**updated_appointment["data"]["appointment"])
+```
