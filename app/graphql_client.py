@@ -1,19 +1,15 @@
-import httpx
-import os
-
-DATAGRAPH_URL = os.getenv("DATAGRAPH_URL", "http://localhost:4000")
+import requests
+from typing import Dict, Any
 
 
-def run_query(query: str, variables: dict = None) -> dict:
-    payload = {"query": query}
+def run_query(query: str, variables: Dict[str, Any] = {}) -> Dict[str, Any]:
+    url = "http://localhost:4000"
+    payload: Dict[str, Any] = {"query": query}
     if variables:
         payload["variables"] = variables
-
-    response = httpx.post(DATAGRAPH_URL, json=payload)
-    response.raise_for_status()
-    result = response.json()
-
-    if "errors" in result:
-        raise ValueError(result["errors"])
-
-    return result["data"]
+    try:
+        response = requests.post(url, json=payload, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise RuntimeError(f"Failed to query GraphQL Datagraph: {str(e)}") from e

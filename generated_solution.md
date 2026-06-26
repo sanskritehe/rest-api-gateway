@@ -1,3 +1,5 @@
+### FILE: app/routes/appointments.py
+```python
 from fastapi import APIRouter, HTTPException, Path
 from app.models import AppointmentResponse
 from app.graphql_client import run_query
@@ -37,3 +39,5 @@ def read_appointment(
         raise HTTPException(status_code=404, detail="Appointment not found")
 
     return AppointmentResponse(**appointment_data["data"]["appointment"])
+
+```
