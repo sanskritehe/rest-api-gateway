@@ -1,99 +1,40 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Path
+from app.models import AppointmentResponse
 from app.graphql_client import run_query
 
-router = APIRouter(prefix="/appointments", tags=["Appointments"])
+router = APIRouter(prefix="/appointments", tags=["Appointment"])
 
 
-class CreateAppointmentRequest(BaseModel):
-    user: str
-    time: str
+@router.get("/{appointment_id}", response_model=AppointmentResponse)
+def read_appointment(
+    appointment_id: int = Path(..., title="The ID of the appointment", gt=0),
+):
+    """
+    GET /appointments/{appointment_id}
+    Retrieves an appointment by ID.
 
+    Path Parameters:
+    - appointment_id (int): Positive integer representing the appointment ID.
 
-class UpdateAppointmentRequest(BaseModel):
-    time: str
-
-
-@router.get("/")
-def get_appointments():
-    data = run_query("""
-        query {
-            appointments {
-                id
-                user
-                time
-                status
-            }
-        }
-    """)
-    return data["appointments"]
-
-
-@router.get("/{appointment_id}")
-def get_appointment(appointment_id: int):
-    data = run_query(
+    Responses:
+    - 200: Successful retrieval of the appointment.
+    - 404: Appointment not found.
+    """
+    existing_appointment = run_query(
         """
-        query GetAppointment($id: Int!) {
-            appointment(id: $id) {
-                id
-                user
-                time
-                status
-            }
+    query ($id: Int!) {
+        appointment(id: $id) {
+            id
+            user
+            time
+            status
         }
-        """,
-        variables={"id": appointment_id},
+    }
+    """,
+        {"id": appointment_id},
     )
-    result = data["appointment"]
-    if result is None:
+
+    if existing_appointment.get("data", {}).get("appointment") is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
-    return result
 
-
-@router.post("/")
-def create_appointment(req: CreateAppointmentRequest):
-    data = run_query(
-        """
-        mutation CreateAppointment($user: String!, $time: String!) {
-            createAppointment(input: { user: $user, time: $time }) {
-                id
-                user
-                time
-                status
-            }
-        }
-        """,
-        variables={"user": req.user, "time": req.time},
-    )
-    return data["createAppointment"]
-
-
-@router.put("/{appointment_id}")
-def update_appointment(appointment_id: int, req: UpdateAppointmentRequest):
-    data = run_query(
-        """
-        mutation UpdateAppointment($id: Int!, $time: String!) {
-            updateAppointment(id: $id, input: { time: $time }) {
-                id
-                user
-                time
-                status
-            }
-        }
-        """,
-        variables={"id": appointment_id, "time": req.time},
-    )
-    return data["updateAppointment"]
-
-
-@router.delete("/{appointment_id}")
-def cancel_appointment(appointment_id: int):
-    data = run_query(
-        """
-        mutation CancelAppointment($id: Int!) {
-            cancelAppointment(id: $id)
-        }
-        """,
-        variables={"id": appointment_id},
-    )
-    return {"cancelled": data["cancelAppointment"]}
+    return AppointmentResponse(**existing_appointment["data"]["appointment"])
