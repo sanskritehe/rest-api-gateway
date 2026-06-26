@@ -1,3 +1,5 @@
+### FILE: app/routes/appointments.py
+```python
 from fastapi import APIRouter, HTTPException, Path
 from app.models import AppointmentResponse, AppointmentUpdate
 from app.db_client import update_appointment_data
@@ -54,24 +56,14 @@ def update_appointment(
     updated_data = {
         key: value for key, value in update_data.dict().items() if value is not None
     }
-
+    
     # We assume that the transition is always valid when no status is being changed.
     if "status" in updated_data:
-        if (
-            existing_appointment["data"]["appointment"]["status"] == "Completed"
-            and updated_data["status"] != "Completed"
-        ):
-            raise HTTPException(
-                status_code=400, detail="Cannot change from Completed status"
-            )
+        if existing_appointment["data"]["appointment"]["status"] == "Completed" and updated_data["status"] != "Completed":
+            raise HTTPException(status_code=400, detail="Cannot change from Completed status")
 
-        if (
-            existing_appointment["data"]["appointment"]["status"] == "Cancelled"
-            and updated_data["status"] != "Cancelled"
-        ):
-            raise HTTPException(
-                status_code=400, detail="Cannot change from Cancelled status"
-            )
+        if existing_appointment["data"]["appointment"]["status"] == "Cancelled" and updated_data["status"] != "Cancelled":
+            raise HTTPException(status_code=400, detail="Cannot change from Cancelled status")
 
     update_appointment_data(appointment_id, updated_data)
 
@@ -91,3 +83,4 @@ def update_appointment(
     )
 
     return AppointmentResponse(**updated_appointment["data"]["appointment"])
+```
