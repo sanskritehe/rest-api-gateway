@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 import requests
 from app.config import settings
 
@@ -41,13 +41,16 @@ def get_appointment_by_id(appointment_id: int) -> Optional[dict]:
         ) from e
 
 
-def update_appointment_data(appointment_id: int, data: Dict[str, Any]) -> None:
+def delete_appointment_by_id(appointment_id: int) -> Optional[dict]:
     try:
-        response = requests.put(
-            f"{settings.DB_SERVICE_URL}/appointments/{appointment_id}", json=data
+        response = requests.delete(
+            f"{settings.DB_SERVICE_URL}/appointments/{appointment_id}"
         )
+        if response.status_code == 404:
+            return None
         response.raise_for_status()
+        return response.json()
     except requests.RequestException as e:
         raise RuntimeError(
-            f"Failed to update appointment in DB service: {str(e)}"
+            f"Failed to delete appointment in DB service: {str(e)}"
         ) from e
