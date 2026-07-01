@@ -1,7 +1,6 @@
 import strawberry
 from app.graphql.resolvers import (
     resolve_appointment_by_id,
-    resolve_microsoft_repos,
     resolve_appointment_record,
 )
 from typing import Optional
@@ -21,15 +20,6 @@ class AppointmentStorage:
     user: str
     time: str
     status: str
-
-
-@strawberry.type
-class Repository:
-    id: int
-    name: str
-    html_url: str = strawberry.field(name="html_url")
-    description: str
-    language: str
 
 
 @strawberry.type
@@ -65,20 +55,6 @@ class Query:
             time=appointment.time,
             status=appointment.status,
         )
-
-    @strawberry.field
-    def microsoftRepos(self) -> list[Repository]:
-        repos = resolve_microsoft_repos()
-        return [
-            Repository(
-                id=repo["id"],
-                name=repo["name"],
-                html_url=repo["html_url"],
-                description=repo["description"],
-                language=repo["language"],
-            )
-            for repo in repos
-        ]
 
 
 schema = strawberry.Schema(query=Query)
