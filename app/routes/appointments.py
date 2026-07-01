@@ -23,10 +23,11 @@ def read_appointment(
     existing_appointment = run_query(
         """
     query ($id: Int!) {
-        appointment(id: $id) {
+        getAppointment(id: $id) {
             id
-            user
-            time
+            patientName
+            doctorName
+            date
             status
         }
     }
@@ -34,7 +35,7 @@ def read_appointment(
         {"id": appointment_id},
     )
 
-    if existing_appointment.get("data", {}).get("appointment") is None:
+    if existing_appointment.get("data", {}).get("getAppointment") is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
-    return AppointmentResponse(**existing_appointment["data"]["appointment"])
+    return AppointmentResponse(**existing_appointment["data"]["getAppointment"])
