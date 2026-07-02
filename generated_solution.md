@@ -1,3 +1,5 @@
+### FILE: app/routes/appointments.py
+```python
 from fastapi import APIRouter, HTTPException, Path
 from app.models import AppointmentResponse
 from app.db_client import delete_appointment as db_delete_appointment
@@ -56,3 +58,5 @@ def delete_appointment_endpoint(
         "message": "Appointment deleted successfully",
         "appointment_id": appointment_id,
     }
+
+```
