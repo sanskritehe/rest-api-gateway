@@ -18,8 +18,9 @@ class AppointmentStorage:
 @strawberry.type
 class Appointment:
     id: int
-    user: str
-    time: str
+    patientName: str
+    doctorName: str
+    date: str
     status: str
 
 
@@ -48,8 +49,9 @@ class Query:
             return None
         return Appointment(
             id=appointment["id"],
-            user=appointment["user"],
-            time=appointment["time"],
+            patientName=appointment["user"],
+            doctorName=appointment["time"],
+            date=appointment["status"],
             status=appointment["status"],
         )
 
