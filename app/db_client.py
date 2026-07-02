@@ -51,3 +51,15 @@ def update_appointment_data(appointment_id: int, data: Dict[str, Any]) -> None:
         raise RuntimeError(
             f"Failed to update appointment in DB service: {str(e)}"
         ) from e
+
+
+def delete_appointment(appointment_id: int) -> None:
+    try:
+        response = requests.delete(
+            f"{settings.DB_SERVICE_URL}/appointments/{appointment_id}"
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        raise RuntimeError(
+            f"Failed to delete appointment in DB service: {str(e)}"
+        ) from e

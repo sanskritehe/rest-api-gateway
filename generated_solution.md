@@ -1,3 +1,5 @@
+### FILE: app/routes/appointments.py
+```python
 from fastapi import APIRouter, HTTPException, Path
 from app.models import AppointmentResponse
 from app.graphql_client import run_query
@@ -85,3 +87,5 @@ def delete_appointment(
         raise HTTPException(
             status_code=response.status_code, detail="Error deleting appointment"
         )
+
+```
