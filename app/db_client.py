@@ -41,6 +41,18 @@ def get_appointment_by_id(appointment_id: int) -> Optional[dict]:
         ) from e
 
 
+def delete_appointment(appointment_id: int) -> None:
+    try:
+        response = requests.delete(
+            f"{settings.DB_SERVICE_URL}/appointments/{appointment_id}"
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        raise RuntimeError(
+            f"Failed to delete appointment from DB service: {str(e)}"
+        ) from e
+
+
 def update_appointment_data(appointment_id: int, data: Dict[str, Any]) -> None:
     try:
         response = requests.put(
